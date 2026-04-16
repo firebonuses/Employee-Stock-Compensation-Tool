@@ -86,7 +86,7 @@ export function Dashboard({ evaluation }: Props) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm text-ink-400">
-                Equity Compass recommends (ranking by {metricLabel(rankBy).toLowerCase()})
+                Best on {metricLabel(rankBy).toLowerCase()}
               </div>
               <div className="text-xl font-semibold text-ink-50 mt-0.5">
                 {STRATEGY_LIBRARY.find((s) => s.id === evaluation.recommendedId)!.name}
@@ -102,6 +102,26 @@ export function Dashboard({ evaluation }: Props) {
                   {fmt.compactUsd(recommended.p10TerminalWealth)} – {fmt.compactUsd(recommended.p90TerminalWealth)}
                 </span>.
               </div>
+              {evaluation.recommendedExceedsCeiling && (
+                <div className="mt-3 rounded-lg border border-amber2/30 bg-amber2/10 text-amber2 text-xs px-3 py-2 flex items-start gap-2">
+                  <TriangleAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <div className="text-ink-200">
+                    Peak concentration under this strategy is{" "}
+                    <span className="font-mono">{fmt.pct(recommended.peakConcentrationPct)}</span>,
+                    above your {state.profile.maxConcentrationPct}% ceiling.
+                    {evaluation.ceilingFriendlyId && evaluation.ceilingFriendlyCost !== undefined && (
+                      <>
+                        {" "}To stay under the ceiling, use{" "}
+                        <span className="text-ink-50 font-medium">
+                          {STRATEGY_LIBRARY.find((s) => s.id === evaluation.ceilingFriendlyId)!.name}
+                        </span>{" "}
+                        — costs ~<span className="font-mono">{fmt.usd(evaluation.ceilingFriendlyCost)}</span>{" "}
+                        in {metricLabel(rankBy).toLowerCase()} wealth.
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="flex flex-wrap gap-2 mt-3">
                 <a href="#scenarios" className="btn-ghost text-xs">Compare all 6 strategies</a>
                 <a href="#plan" className="btn-primary text-xs">View action plan</a>

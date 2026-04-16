@@ -341,8 +341,16 @@ export interface EvaluationResult {
   outcomes: StrategyOutcome[];
   /** Monte Carlo summary of price percentiles, for charting. */
   priceFan: ReturnType<typeof simulatePaths>;
-  /** Recommended strategy id (highest score on user objective). */
+  /** Top-ranked strategy on the user's chosen metric (no filter). */
   recommendedId: StrategyId;
+  /** True if the recommended strategy's peak concentration exceeds the ceiling. */
+  recommendedExceedsCeiling: boolean;
+  /** The best-ranked strategy that *does* respect the concentration ceiling.
+   *  Undefined if the recommended strategy already respects the ceiling or
+   *  if no strategy respects it (in which case ceilingRespected = false). */
+  ceilingFriendlyId?: StrategyId;
+  /** Wealth delta (chosen metric) between recommended and ceilingFriendly. */
+  ceilingFriendlyCost?: number;
 }
 
 export function evaluateAll(
@@ -427,9 +435,17 @@ export function evaluateAll(
     } satisfies StrategyOutcome;
   });
 
-  // Recommendation = highest wealth on user's chosen metric, subject to
-  // peak concentration <= user's ceiling. If nothing meets the ceiling,
-  // rank all outcomes (the concentration flag still shows in the UI).
+  // Recommendation policy:
+  //
+  // 1. Rank strictly by the user's chosen metric (mean / median / P10).
+  //    The concentration ceiling is a PREFERENCE, not a hard constraint;
+  //    filtering on it can produce absurd results (e.g. picking a strategy
+  //    that sacrifices 4x wealth just to clear a soft ceiling).
+  //
+  // 2. If the top-ranked strategy's peak concentration exceeds the
+  //    ceiling, we also surface the best *ceiling-respecting*
+  //    alternative and the wealth cost of preferring it. The UI shows
+  //    both so the user can see the tradeoff and choose.
   const rankBy = state.profile.rankBy ?? "median";
   const metricOf = (o: StrategyOutcome) =>
     rankBy === "mean"
@@ -437,12 +453,34 @@ export function evaluateAll(
       : rankBy === "p10"
         ? o.p10TerminalWealth
         : o.medianTerminalWealth;
+  const ranked = outcomes.slice().sort((a, b) => metricOf(b) - metricOf(a));
+  const recommended = ranked[0];
+  const recommendedId = recommended.strategyId;
+
   const maxConc = state.profile.maxConcentrationPct / 100;
-  const eligible = outcomes.filter((o) => o.peakConcentrationPct <= maxConc * 1.01);
-  const ranked = (eligible.length ? eligible : outcomes)
-    .slice()
-    .sort((a, b) => metricOf(b) - metricOf(a));
-  return { outcomes, priceFan: fan, recommendedId: ranked[0].strategyId };
+  const recommendedExceedsCeiling =
+    recommended.peakConcentrationPct > maxConc * 1.01;
+
+  let ceilingFriendlyId: StrategyId | undefined;
+  let ceilingFriendlyCost: number | undefined;
+  if (recommendedExceedsCeiling) {
+    const friendly = ranked.find(
+      (o) => o.peakConcentrationPct <= maxConc * 1.01,
+    );
+    if (friendly && friendly.strategyId !== recommendedId) {
+      ceilingFriendlyId = friendly.strategyId;
+      ceilingFriendlyCost = metricOf(recommended) - metricOf(friendly);
+    }
+  }
+
+  return {
+    outcomes,
+    priceFan: fan,
+    recommendedId,
+    recommendedExceedsCeiling,
+    ceilingFriendlyId,
+    ceilingFriendlyCost,
+  };
 }
 
 function yearTaxBreakdown(state: AppState, y: YearAccumulator): YearlyTaxBreakdown {
