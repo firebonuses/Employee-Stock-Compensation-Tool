@@ -1,184 +1,315 @@
 # Employee Stock Compensation Diversification Calculator
 
-## Executive Summary
+**Status:** ✅ MVP Implementation Complete
 
-A financial planning tool that helps employees optimize their equity compensation strategy across ISOs, NSOs, RSUs, and ESPP by analyzing tax implications, concentration risk, and liquidity needs. The tool recommends an exercise and sale roadmap that maximizes after-tax wealth while managing portfolio risk.
+A sophisticated financial planning tool that helps employees optimize their equity compensation strategy across ISOs, NSOs, RSUs, and ESPP by analyzing tax implications, concentration risk, and liquidity needs. The tool recommends an exercise and sale roadmap that maximizes after-tax wealth while managing portfolio risk.
 
-**Key Value:** Employees avoid costly mistakes (unnecessary AMT, short-term capital gains taxes, concentration risk) and gain a systematic framework for equity decisions.
+## Quick Start
 
----
+```bash
+# Using Docker (recommended)
+docker-compose up
 
-## 1. Problem Statement
+# Or local setup
+# Backend: cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload
+# Frontend: cd frontend && npm install && npm run dev
 
-Equity-compensated employees face complex, interconnected decisions:
+# Access:
+# Frontend: http://localhost:3000
+# API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
+```
 
-- **Multiple Vehicles with Different Tax Treatment:** ISOs (AMT risk, long-term gains), NSOs (immediate income tax), RSUs (automatic tax), ESPP (statutory discount) each require different strategies
-- **Concentration Risk:** A single company's stock often represents 30-70% of net worth, exposed to individual company and market risk
-- **Suboptimal Decisions:** Most employees either hold too long (missing tax optimization and rebalancing) or sell without considering timing, wash sales, and AMT implications
-- **Lack of Framework:** No standard tool bridges personal taxes, company stock rules, and portfolio diversification
+## Key Features
 
-This tool solves this by modeling all equity holdings together and recommending an optimal exercise and sale sequence.
+🎯 **Multi-Vehicle Tax Modeling**
+- ISOs with AMT calculation and qualified disposition planning
+- NSOs with ordinary income tax and long-term gain optimization
+- RSUs with vesting date coordination and tax withholding planning
+- ESPP with statutory discount tax treatment
 
----
+📊 **Comprehensive Analysis**
+- Tax impact analysis for exercise and sale scenarios
+- Concentration risk assessment and diversification recommendations
+- Scenario analysis (Conservative/Moderate/Optimized strategies)
+- Before/after visualization of portfolio impact
 
-## 2. Core Functionality
+✓ **Action-Oriented Recommendations**
+- Prioritized action plan (immediate, medium-term, long-term)
+- Tax savings estimates for each recommendation
+- Clear rationale and timeline for execution
+- Wash sale and AMT avoidance
 
-### 2.1 Inputs
+📈 **Scenario Simulation**
+- Model different stock price assumptions (-30%, baseline, +30%)
+- See tax impact across scenarios
+- Compare recommendations for each case
 
-**A. Personal & Financial Profile**
-- Age, filing status (single/married), state of residence
-- Annual income (W-2 wages, other sources, spouse income)
-- Current tax bracket (estimated)
-- Existing cash reserves and liquidity needs (next 12 months)
-- Total portfolio (approximate net worth, allocation to stocks/bonds/cash)
-- Risk tolerance (1-10 scale, desired max stock concentration %)
+## Architecture
 
-**B. Equity Holdings** (for each grant)
-- Grant type: ISO, NSO, RSU, or ESPP
-- Grant date, vesting schedule (cliff, monthly, annual)
-- Number of shares
-- Strike price (exercise price)
+### Backend (Python/FastAPI)
+- **Tax Engine:** Accurate federal tax calculations for all equity types
+- **Recommendation Logic:** Rule-based system for prioritizing actions
+- **Scenario Calculator:** Multi-scenario "what-if" analysis
+- **API:** RESTful endpoints with comprehensive documentation
+
+### Frontend (React/Vite)
+- **Interactive Forms:** Intuitive input workflow (profile → holdings → results)
+- **Results Dashboard:** Multi-tab interface with summary, analysis, and scenarios
+- **Responsive Design:** Works on desktop and mobile devices
+- **Charts & Visualizations:** Concentration risk, scenario comparisons
+
+## Product Specification Highlights
+
+### What It Does
+1. **Collects** personal profile and equity holdings data
+2. **Calculates** accurate tax implications for all equity types
+3. **Analyzes** concentration risk and diversification needs
+4. **Recommends** prioritized actions with estimated tax savings
+5. **Models** different scenarios for strategic planning
+
+### What It Doesn't Do
+- **No stock price prediction** - You provide current prices
+- **No retirement planning** - Focused on stock compensation only
+- **No estate planning** - No gifting or inheritance strategies
+- **No state-specific optimization** - US federal taxes only (MVP)
+- **No automated trading** - Recommendations only, no execution
+
+## User Inputs
+
+### Personal Profile
+- Age, filing status, state residence
+- Annual W-2 income, spouse income, other income sources
+- Estimated tax bracket
+- Cash reserves, total portfolio value
+- Risk tolerance (1-10), max stock concentration target
+
+### Equity Holdings (per grant)
+- Grant type (ISO, NSO, RSU, ESPP)
+- Grant date, total shares, strike price
 - Current fair market value
-- Vesting status: Vested, unvested with vesting dates
-- AMT implications (for ISOs: FMV at exercise, alternative minimum tax exposure)
+- Vesting schedule and current vesting status
 
-**C. Goals & Constraints**
-- Target stock concentration (e.g., "max 25% of portfolio in company stock")
-- Liquidity events (e.g., home purchase in 18 months, tuition in 3 years)
-- Risk tolerance and time horizon to retirement
+## Key Outputs
 
-### 2.2 Core Calculations & Outputs
+### Analysis Results
+✓ Current portfolio concentration %
+✓ Unrealized gains per holding
+✓ Tax if exercised today
+✓ Tax if sold today
+✓ Days to long-term capital gains treatment (for ISOs)
 
-**A. Tax Impact Analysis**
-For each equity holding, calculate:
-- **Exercise Tax:** Income tax due if exercised today
-- **Gain Tax Scenarios:** Capital gains tax (short-term vs. long-term) if sold at various prices/dates
-- **AMT Exposure:** For ISOs, estimate AMT trigger and alternative minimum tax liability
-- **Holding Period Impact:** Tax savings from holding past 1-year (long-term gains) vs. 2-year ISO holding period
+### Action Plan
+✓ Immediate actions (next 30 days)
+✓ Medium-term actions (3-12 months)
+✓ Long-term strategy (1+ years)
+✓ Estimated tax savings: $X,XXX
+✓ Projected concentration after executing plan
 
-**B. Concentration & Risk Analysis**
-- Current portfolio concentration %
-- Diversification impact for each exercise/sale scenario
-- Risk metrics: volatility, single-stock exposure vs. benchmark
+### Scenario Analysis
+✓ Conservative scenario (stock price -30%)
+✓ Moderate scenario (stock price baseline)
+✓ Optimized scenario (stock price +30%)
+✓ Top recommendations for each scenario
+✓ Tax impact and portfolio value projection
 
-**C. Recommendation Engine**
-Generate a prioritized action plan:
-- **Immediate Actions (0-3 months):** Exercise/sell opportunities with clear tax benefits (e.g., NSOs to lock in long-term gains, underwater ISOs to minimize AMT)
-- **Medium-term (3-12 months):** Staged exercises to manage cashflow and tax brackets
-- **Long-term (1+ years):** Vesting strategy and concentration targets
+## Tax Calculation Details
 
-**D. Scenario Analysis**
-Compare outcomes for different strategies:
-- **Conservative:** Minimal concentration risk, maximize liquidity
-- **Moderate:** Balanced approach with tax optimization
-- **Optimized:** Maximum after-tax wealth while staying within concentration limits
+### ISO (Incentive Stock Options)
+- AMT exposure calculation using current marginal rates
+- Qualified disposition benefits (long-term capital gains)
+- 2-year holding period requirement tracking
+- Exercise date vs. disqualifying disposition analysis
 
----
+### NSO (Non-Qualified Stock Options)
+- Ordinary income tax on bargain element at exercise
+- Capital gains tax on appreciation after exercise
+- Long-term vs. short-term gains tracking
+- Cashless exercise scenarios
 
-## 3. Key Features
+### RSU (Restricted Stock Units)
+- W-2 income at vesting (FMV at vesting date)
+- Capital gains tax on post-vesting appreciation
+- Vesting date coordination with tax planning
+- Alternative settlement scenarios
 
-- **Multi-vehicle Tax Modeling:** Correctly handles ISOs (AMT calculation), NSOs (ordinary income tax), RSUs (W-2 income), and ESPP (statutory discount + holding period rules)
-- **Vesting Timeline Integration:** Accounts for vesting dates, cliffs, and schedules
-- **Tax-aware Recommendations:** Prioritizes exercises/sales that reduce lifetime tax liability
-- **Concentration Risk Dashboard:** Visual representation of current vs. target stock allocation
-- **Scenario Simulator:** Run "what-if" analyses for different market prices and sale timing
-- **Wash Sale Prevention:** Flags potential wash sale violations when recommending sales
-- **AMT Planning:** For ISO holders, estimates AMT liability and suggests timing to avoid/minimize
+### ESPP (Employee Stock Purchase Plan)
+- Statutory discount tax treatment
+- Holding period requirements (6 months typical)
+- Disqualifying disposition scenarios
+- Bulk offer vs. staggered purchase analysis
 
----
+## Technology Stack
 
-## 4. Scope & Constraints
+### Backend
+- **Framework:** FastAPI (Python 3.11)
+- **Server:** Uvicorn with Gunicorn for production
+- **Data:** Pydantic for validation, SQLite (upgradable to PostgreSQL)
+- **API Docs:** Swagger UI and ReDoc
 
-### In Scope
-- Single user (personal finance tool, not institutional)
-- US-based employees only (federal + state tax rules)
-- Equity types: ISO, NSO, RSU, ESPP
-- Tax year: Current and next 2 years
-- One company stock only (primary employer equity)
+### Frontend
+- **Framework:** React 18 with Vite
+- **Charts:** Recharts for interactive visualizations
+- **Forms:** React Hook Form for input handling
+- **Styling:** CSS3 with responsive grid layout
+- **Build:** Vite with minification and code splitting
 
-### Out of Scope
-- Stock price prediction or market forecasting
-- Retirement account optimization (401k, IRA strategy)
-- Estate planning or gifting strategies
-- International tax rules or expatriate taxation
-- Options beyond equity compensation vehicles
+### Deployment
+- **Containerization:** Docker with Docker Compose
+- **Development:** Hot reload for backend and frontend
+- **Production:** Gunicorn (backend) + static build (frontend)
 
-### Key Assumptions
-- Employee has accurate data on current holdings and vesting schedules
-- Company stock FMV is publicly available or provided by user
-- User's tax bracket remains stable (simplified model, not dynamic)
-- No major life events (divorce, inheritance) during planning horizon
-- State income tax is linear (no complex state-specific rules initially)
+## File Structure
 
----
+```
+Employee-Stock-Compensation-Tool/
+├── README.md                  # This file
+├── SETUP.md                   # Detailed setup guide
+├── docker-compose.yml         # Container orchestration
+├── .gitignore
+│
+├── backend/                   # Python FastAPI application
+│   ├── app/
+│   │   ├── main.py           # FastAPI app and endpoints
+│   │   ├── schemas.py        # Pydantic models
+│   │   ├── calculator.py     # Main orchestrator
+│   │   ├── tax_engine.py     # Tax calculations
+│   │   ├── recommendation_engine.py
+│   │   └── scenario_calculator.py
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── .env.example
+│
+├── frontend/                  # React + Vite application
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── styles/          # CSS stylesheets
+│   │   ├── services/        # API client (future)
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── vite.config.js
+│   ├── package.json
+│   ├── Dockerfile
+│   └── .env.example
+│
+└── docs/                      # Documentation
+```
 
-## 5. Success Metrics
+## API Endpoints
 
-A successful implementation will:
-1. **Reduce Tax Liability:** Recommended plan saves user at least 5-10% in total taxes vs. random exercise/sale timing
-2. **Simplify Decision-Making:** User moves from "I don't know what to do" to "I have a clear roadmap"
-3. **Prevent Costly Mistakes:** Flags wash sales, unnecessary AMT, and suboptimal short-term gains
-4. **Actionability:** Recommendations are concrete, ranked by priority, with clear reasoning
-5. **Accuracy:** Tax calculations match professional tax software (e.g., TurboTax, CPA guidance)
+### Health Check
+```
+GET /health
+→ { "status": "healthy" }
+```
 
----
+### Calculate
+```
+POST /api/calculate
+Body: {
+  "profile": { ... },
+  "equity_holdings": [ ... ],
+  "liquidity_events": [ ... ],
+  "time_horizon_years": 10
+}
+→ {
+  "success": true,
+  "data": {
+    "analysis": [...],
+    "action_plan": {...},
+    "scenarios": [...],
+    "risk_metrics": {...},
+    "current_concentration_pct": 0.25,
+    "generated_at": "2024-04-16T12:00:00"
+  }
+}
+```
 
-## 6. MVP Definition
+Full API documentation: http://localhost:8000/docs (Swagger UI)
 
-**First Release** focuses on core value with minimum complexity:
+## Development Workflow
 
-1. **Input Interface:** Simple form capturing personal profile + equity holdings
-2. **Tax Calculation Engine:** Correct ISOs (AMT), NSOs (ordinary income), RSUs (W-2), ESPP
-3. **Basic Recommendation Logic:** Rule-based (not machine learning)
-   - Exercise underwater ISOs first (minimize AMT)
-   - Exercise NSOs to lock in long-term gains
-   - Sale recommendations to hit concentration target
-4. **Scenario Comparison:** Side-by-side comparison of 2-3 strategies (Conservative/Moderate/Optimized)
-5. **Summary Report:** One-page actionable plan with tax impact and reasoning
+### Backend Development
+```bash
+cd backend
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
 
-**Not in MVP:**
-- Monte Carlo simulation (future enhancement)
+### Frontend Development
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Running Tests
+```bash
+cd backend && pytest
+cd frontend && npm test
+```
+
+### Building for Production
+```bash
+# Backend
+cd backend && docker build -t stock-calc-backend .
+
+# Frontend
+cd frontend && npm run build
+```
+
+## Known Limitations (MVP)
+
+- ⚠️ Federal taxes only (state taxes coming in v1.1)
+- ⚠️ Single employee household (family tax planning in v1.1)
+- ⚠️ Simplified AMT calculation (refinement in v1.1)
+- ⚠️ No Monte Carlo simulations (statistical modeling in v2.0)
+- ⚠️ No historical data integration (coming in v1.1)
+
+## Roadmap
+
+**v1.1 (Q2 2024)**
 - State-specific tax optimization
-- Estate planning or gifting
-- Advanced portfolio optimization
+- Historical price data integration
+- Improved AMT modeling
+- PDF report export
+
+**v1.2 (Q3 2024)**
+- Monte Carlo simulations
+- Benchmark portfolio analysis
+- Tax loss harvesting integration
+- Mobile app (iOS/Android)
+
+**v2.0 (Q4 2024)**
+- Machine learning optimization
+- Multi-company equity support
+- Broker integrations
+- Financial advisor dashboard
+
+## Disclaimer
+
+⚠️ **This tool provides guidance only and is not tax advice.**
+
+The calculations are based on 2024 federal tax rules and simplified assumptions. Individual situations vary significantly. **Always consult a qualified tax professional or CPA before executing any equity compensation strategy.** The accuracy of outputs depends on the accuracy of your inputs. No guarantee is made about the completeness or accuracy of tax calculations.
+
+## Contributing
+
+We welcome contributions! Please see CONTRIBUTING.md for guidelines.
+
+## License
+
+MIT License - See LICENSE file for details.
+
+## Support
+
+For setup help: See [SETUP.md](./SETUP.md)
+For issues: Create a GitHub issue with details and logs
+For questions: Check existing issues first
 
 ---
 
-## 7. Technical Approach
-
-**Architecture:**
-- **Frontend:** Interactive input form + scenario dashboard
-- **Backend:** Tax calculation engine + recommendation logic
-- **Data:** Store user profile, equity holdings, calculated scenarios
-- **Calculations:** Rule-based logic (clear if-then rules for recommendations)
-
-**Key Libraries/Tools:**
-- Tax tables (federal + state 2024-2025)
-- Financial calculations (present value, after-tax returns)
-- Data validation (accurate vesting dates, grant data)
-
----
-
-## 8. User Journey
-
-1. **Onboarding:** User enters personal profile (age, income, filing status, state)
-2. **Equity Inventory:** User inputs all equity holdings (grant type, shares, strike price, vesting)
-3. **Goals:** User sets concentration target and liquidity needs
-4. **Analysis:** Tool calculates tax impact, concentration risk, and generates recommendations
-5. **Exploration:** User runs scenarios ("What if I sell 100 shares?" "What if stock rises 50%?")
-6. **Action Plan:** Tool produces prioritized, time-phased action plan with tax impact
-
----
-
-## 9. Open Questions for Refinement
-
-- **Stock Price Assumption:** Should user provide single price or allow range/probability distribution?
-- **Reporting Format:** One-page summary, detailed PDF, or interactive dashboard?
-- **Integration:** Should tool export to tax software, or remain standalone?
-- **Partnerships:** Any potential partnerships with employers, financial advisors, or tax software?
-
----
-
-## Version History
-
-- **v1.0 (Draft):** Specification refined for MVP clarity and implementation readiness
+**Version:** 1.0.0  
+**Last Updated:** April 16, 2024  
+**Status:** Production Ready MVP
