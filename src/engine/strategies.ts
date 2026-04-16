@@ -12,7 +12,6 @@
 import {
   vestedShares,
   vestEvents,
-  totalEquityValue,
   vestedIsoBargainElement,
   parseDate,
   fmtDate,
@@ -375,31 +374,39 @@ export function evaluateAll(
     const totalTaxes = breakdown.reduce((sum, b) => sum + b.totalTax, 0);
     const peakAmt = breakdown.reduce((m, b) => Math.max(m, b.federalAmt), 0);
 
-    const horizonPrice = ctx.pricePath[ctx.pricePath.length - 1];
-    const heldEquityValue = totalEquityValue(state.grants, horizonPrice, todayUtc);
-    const proceedsAfterTax = breakdown.reduce(
-      (sum, b, i) =>
-        sum + Math.max(0, (yearly[i].ordinaryFromEquity || 0) + (yearly[i].longTermGains || 0)) -
-        b.totalTax * 0.5,
-      0,
-    );
-
-    // Use Monte Carlo terminal price percentiles to derive wealth percentiles
-    // for the *held* portion of equity. Sold proceeds are price-independent.
+    // Wealth accounting, done consistently:
+    //
+    // - SOLD shares: valued at approximately the price at time-of-sale.
+    //   For v1 we use today's price (a conservative proxy; sales happen
+    //   across year 1 for most strategies and across the horizon for
+    //   AMT-Optimized / Exercise-and-Hold — see strategySellPriceFactor).
+    //
+    // - HELD shares: valued at the Monte Carlo terminal-price percentile.
+    //   This is where volatility drag (median < mean for lognormal paths)
+    //   shows up honestly.
+    //
+    // - Total taxes over the horizon are subtracted.
+    const currentPrice = state.company.currentPrice;
+    const totalShares = sharesEquivalent(state.grants);
     const heldFraction = strategyHeldFraction(s.id);
-    const baseProceeds = (1 - heldFraction) * heldEquityValue;
-    const p10 = baseProceeds + heldFraction * fan.p10[fan.p10.length - 1] *
-      sharesEquivalent(state.grants);
-    const median = baseProceeds + heldFraction * fan.p50[fan.p50.length - 1] *
-      sharesEquivalent(state.grants);
-    const p90 = baseProceeds + heldFraction * fan.p90[fan.p90.length - 1] *
-      sharesEquivalent(state.grants);
-
-    const peakConcentrationPct = peakConcentration(
-      state,
-      heldFraction,
-      horizonPrice,
+    const sellPriceFactor = strategySellPriceFactor(
+      s.id,
+      state.company.expectedAnnualReturn,
+      state.horizonYears,
     );
+    const soldProceeds = (1 - heldFraction) * totalShares * currentPrice * sellPriceFactor;
+
+    const tP10 = fan.p10[fan.p10.length - 1];
+    const tP50 = fan.p50[fan.p50.length - 1];
+    const tP90 = fan.p90[fan.p90.length - 1];
+    const heldShares = heldFraction * totalShares;
+
+    const p10 = soldProceeds + heldShares * tP10 - totalTaxes;
+    const median = soldProceeds + heldShares * tP50 - totalTaxes;
+    const p90 = soldProceeds + heldShares * tP90 - totalTaxes;
+
+    const horizonPrice = ctx.pricePath[ctx.pricePath.length - 1];
+    const peakConcentrationPct = peakConcentration(state, heldFraction, horizonPrice);
 
     const goalProb = goalProbability(median, p10, p90, state);
 
@@ -414,8 +421,7 @@ export function evaluateAll(
       yearly: breakdown,
       goalProbability: goalProb,
       actions: yearly.flatMap((y) => y.actions),
-      _proceedsBookkeep: proceedsAfterTax,
-    } as StrategyOutcome & { _proceedsBookkeep: number };
+    } satisfies StrategyOutcome;
   });
 
   // Recommendation = highest median wealth subject to concentration <= max.
@@ -469,6 +475,33 @@ function strategyHeldFraction(id: StrategyId): number {
       return 0.85;
     case "exerciseAndHold":
       return 0.95;
+  }
+}
+
+/**
+ * Approximate growth factor applied to "today's price" to value sold
+ * shares under each strategy, reflecting when those sales typically
+ * happen across the horizon. `1.0` ≈ sold at today's price.
+ */
+function strategySellPriceFactor(
+  id: StrategyId,
+  mu: number,
+  horizonYears: number,
+): number {
+  const pow = (t: number) => Math.pow(1 + mu, t);
+  switch (id) {
+    case "hold":
+      return 1.0; // no sales; factor doesn't matter (heldFraction=1)
+    case "sameDaySale":
+      return 1.0; // today
+    case "sellToCover":
+      return pow(horizonYears * 0.5); // covers spread across horizon
+    case "systematic":
+      return pow(0.375); // avg of 4 quarterly sales in year 1
+    case "amtOptimized":
+      return pow(horizonYears * 0.75); // ISOs sold after 1yr LTCG hold, late
+    case "exerciseAndHold":
+      return pow(horizonYears * 0.6); // exercised early, sold later for LTCG
   }
 }
 
