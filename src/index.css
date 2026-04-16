@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-feature-settings: "ss01", "cv11";
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(124, 92, 255, 0.18), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(34, 195, 154, 0.10), transparent 55%),
+    #070912;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl2 border border-ink-800/80 bg-ink-900/60 backdrop-blur-sm shadow-card;
+  }
+  .card-pad {
+    @apply card p-5;
+  }
+  .input {
+    @apply w-full rounded-lg bg-ink-900 border border-ink-700/70 px-3 py-2 text-sm text-ink-100
+           placeholder-ink-400 outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/30;
+  }
+  .label {
+    @apply block text-[11px] font-medium uppercase tracking-wider text-ink-400 mb-1.5;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium
+           transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-600;
+  }
+  .btn-ghost {
+    @apply btn bg-ink-800/70 text-ink-100 hover:bg-ink-700/80 border border-ink-700/60;
+  }
+  .btn-danger {
+    @apply btn bg-crimson/15 text-crimson hover:bg-crimson/25 border border-crimson/30;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-700/70 bg-ink-900/70 px-2.5 py-0.5 text-[11px] font-medium text-ink-300;
+  }
+  .nav-link {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-300 transition hover:bg-ink-800/70 hover:text-ink-100;
+  }
+  .nav-link-active {
+    @apply bg-ink-800/80 text-ink-50 ring-1 ring-inset ring-ink-700/60;
+  }
+  .table-mono td {
+    @apply font-mono tabular-nums;
+  }
+  .divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-ink-700/60 to-transparent;
+  }
+  .kpi {
+    @apply text-[11px] uppercase tracking-wider text-ink-400;
+  }
+}
+
+/* recharts polish */
+.recharts-cartesian-axis-tick-value,
+.recharts-text {
+  fill: #8a94a6 !important;
+  font-size: 11px;
+}
+.recharts-default-tooltip {
+  background: #171b25 !important;
+  border: 1px solid #262c39 !important;
+  border-radius: 10px !important;
+  padding: 10px 12px !important;
+}
+.recharts-tooltip-label {
+  color: #dde2ea !important;
+  font-weight: 600;
+}
+.recharts-cartesian-grid line {
+  stroke: #1f2533 !important;
+}
+
+/* hide number input arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+::selection {
+  background: rgba(124, 92, 255, 0.35);
+}
