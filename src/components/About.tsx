@@ -45,6 +45,30 @@ export function About() {
         </p>
       </Section>
 
+      <Section title="Mean vs. median vs. P10 — and why it matters">
+        <p>
+          Under GBM, terminal prices are lognormal. The <strong>mean</strong> grows at μ per
+          year; the <strong>median</strong> grows at <code className="text-xs">μ − ½σ²</code>,
+          because half the probability mass of the lognormal lives below the mean. When σ²/2
+          &gt; μ (high volatility relative to drift), the median can be <em>below</em> the
+          starting price even though the mean is far above it. This is the well-known{" "}
+          <strong>volatility drag</strong> on the median.
+        </p>
+        <p>
+          We expose three ranking metrics so the recommendation aligns with how you think
+          about risk:
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li><strong>Mean</strong> — expected outcome. Favored if you believe your exposure is repeatable and you're maximizing long-run wealth.</li>
+          <li><strong>Median</strong> — typical outcome. Acknowledges volatility drag and is a sensible conservative middle.</li>
+          <li><strong>P10 (downside)</strong> — a bad-but-not-catastrophic path. Favored if you're risk-averse or have binding liquidity needs.</li>
+        </ul>
+        <p>
+          The same strategy can win on one metric and lose on another; that's not a bug, it's
+          the real tradeoff equity compensation forces on you.
+        </p>
+      </Section>
+
       <Section title="Strategy evaluator">
         <p>
           For each strategy we walk all vest events between today and your horizon, generate the

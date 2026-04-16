@@ -3,11 +3,19 @@ import { useStore, selectAppState } from "../store/useStore";
 import { totalEquityValue, vestedEquityValue, vestEvents } from "../engine/equity";
 import { fmt } from "../utils/format";
 import type { EvaluationResult } from "../engine/strategies";
-import { STRATEGY_LIBRARY } from "../engine/types";
+import { STRATEGY_LIBRARY, type RankMetric, type StrategyOutcome } from "../engine/types";
 import { ConcentrationGauge } from "./charts/ConcentrationGauge";
 import { PriceFanChart } from "./charts/PriceFanChart";
 import { TaxBreakdownChart } from "./charts/TaxBreakdownChart";
 import { ArrowDown, ArrowUp, Calendar, Sparkle, TriangleAlert } from "./icons";
+import { RankMetricToggle } from "./RankMetricToggle";
+
+function metricValue(o: StrategyOutcome, m: RankMetric): number {
+  return m === "mean" ? o.meanTerminalWealth : m === "p10" ? o.p10TerminalWealth : o.medianTerminalWealth;
+}
+function metricLabel(m: RankMetric): string {
+  return m === "mean" ? "Mean" : m === "p10" ? "P10 downside" : "Median";
+}
 
 interface Props {
   evaluation: EvaluationResult;
@@ -33,7 +41,8 @@ export function Dashboard({ evaluation }: Props) {
 
   const recommended = evaluation.outcomes.find((o) => o.strategyId === evaluation.recommendedId)!;
   const baseline = evaluation.outcomes.find((o) => o.strategyId === "hold")!;
-  const wealthDelta = recommended.medianTerminalWealth - baseline.medianTerminalWealth;
+  const rankBy = state.profile.rankBy;
+  const wealthDelta = metricValue(recommended, rankBy) - metricValue(baseline, rankBy);
   const taxDelta = baseline.totalTaxes - recommended.totalTaxes;
 
   return (
@@ -60,8 +69,8 @@ export function Dashboard({ evaluation }: Props) {
           accent="violet"
         />
         <Kpi
-          label="Modeled lift vs. hold"
-          value={fmt.usd(Math.max(0, wealthDelta))}
+          label={`Lift vs. hold · ${metricLabel(rankBy)}`}
+          value={fmt.usd(Math.abs(wealthDelta))}
           sub={taxDelta > 0 ? `${fmt.usd(taxDelta)} less tax` : `${fmt.usd(-taxDelta)} more tax`}
           delta={wealthDelta >= 0 ? "up" : "down"}
           accent={wealthDelta >= 0 ? "emerald" : "amber"}
@@ -70,25 +79,37 @@ export function Dashboard({ evaluation }: Props) {
 
       {/* Recommendation banner */}
       <section className="card-pad bg-gradient-to-br from-accent/10 to-emerald2/5 border-accent/30">
-        <div className="flex items-start gap-4">
-          <div className="h-10 w-10 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
-            <Sparkle className="h-5 w-5 text-accent-400" />
+        <div className="flex flex-col lg:flex-row items-start gap-5">
+          <div className="flex items-start gap-4 flex-1 min-w-0">
+            <div className="h-10 w-10 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
+              <Sparkle className="h-5 w-5 text-accent-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm text-ink-400">
+                Equity Compass recommends (ranking by {metricLabel(rankBy).toLowerCase()})
+              </div>
+              <div className="text-xl font-semibold text-ink-50 mt-0.5">
+                {STRATEGY_LIBRARY.find((s) => s.id === evaluation.recommendedId)!.name}
+              </div>
+              <div className="text-sm text-ink-300 mt-2 leading-relaxed">
+                {STRATEGY_LIBRARY.find((s) => s.id === evaluation.recommendedId)!.description}{" "}
+                At year {state.horizonYears}: mean{" "}
+                <span className="font-mono text-ink-50">{fmt.usd(recommended.meanTerminalWealth)}</span>,
+                median{" "}
+                <span className="font-mono text-ink-50">{fmt.usd(recommended.medianTerminalWealth)}</span>,
+                10th–90th{" "}
+                <span className="text-ink-400">
+                  {fmt.compactUsd(recommended.p10TerminalWealth)} – {fmt.compactUsd(recommended.p90TerminalWealth)}
+                </span>.
+              </div>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <a href="#scenarios" className="btn-ghost text-xs">Compare all 6 strategies</a>
+                <a href="#plan" className="btn-primary text-xs">View action plan</a>
+              </div>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm text-ink-400">Equity Compass recommends</div>
-            <div className="text-xl font-semibold text-ink-50 mt-0.5">
-              {STRATEGY_LIBRARY.find((s) => s.id === evaluation.recommendedId)!.name}
-            </div>
-            <div className="text-sm text-ink-300 mt-2 leading-relaxed">
-              {STRATEGY_LIBRARY.find((s) => s.id === evaluation.recommendedId)!.description}{" "}
-              Median modeled wealth at year {state.horizonYears}:{" "}
-              <span className="font-mono text-ink-50">{fmt.usd(recommended.medianTerminalWealth)}</span>{" "}
-              (10th–90th: {fmt.compactUsd(recommended.p10TerminalWealth)} – {fmt.compactUsd(recommended.p90TerminalWealth)}).
-            </div>
-            <div className="flex flex-wrap gap-2 mt-3">
-              <a href="#scenarios" className="btn-ghost text-xs">Compare all 6 strategies</a>
-              <a href="#plan" className="btn-primary text-xs">View action plan</a>
-            </div>
+          <div className="shrink-0">
+            <RankMetricToggle />
           </div>
         </div>
       </section>

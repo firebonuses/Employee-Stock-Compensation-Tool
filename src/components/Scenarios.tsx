@@ -1,32 +1,48 @@
 import type { EvaluationResult } from "../engine/strategies";
-import { STRATEGY_LIBRARY } from "../engine/types";
+import { STRATEGY_LIBRARY, type RankMetric, type StrategyOutcome } from "../engine/types";
 import { fmt } from "../utils/format";
+import { useStore } from "../store/useStore";
 import { StrategyWealthBars } from "./charts/StrategyBars";
 import { Check, Sparkle } from "./icons";
+import { RankMetricToggle } from "./RankMetricToggle";
 
 interface Props {
   evaluation: EvaluationResult;
 }
 
+function metricValue(o: StrategyOutcome, m: RankMetric): number {
+  return m === "mean" ? o.meanTerminalWealth : m === "p10" ? o.p10TerminalWealth : o.medianTerminalWealth;
+}
+
 export function Scenarios({ evaluation }: Props) {
-  const sorted = evaluation.outcomes.slice().sort((a, b) => b.medianTerminalWealth - a.medianTerminalWealth);
+  const rankBy = useStore((s) => s.profile.rankBy);
+  const sorted = evaluation.outcomes
+    .slice()
+    .sort((a, b) => metricValue(b, rankBy) - metricValue(a, rankBy));
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-xl font-semibold text-ink-50">Scenario comparison</h1>
-        <p className="text-sm text-ink-400 mt-1">
-          Six strategies, modeled side-by-side. Median wealth uses your expected return; the 10th–90th
-          range comes from {fmt.num(1500)} Monte Carlo paths.
-        </p>
+      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-ink-50">Scenario comparison</h1>
+          <p className="text-sm text-ink-400 mt-1 max-w-2xl">
+            Six strategies, modeled side-by-side. The table shows mean (drift-driven) and
+            median (drag-aware) terminal wealth, plus the 10th–90th percentile range across
+            {" "}{fmt.num(1500)} Monte Carlo paths. Pick a ranking metric below to change
+            how the recommendation is chosen.
+          </p>
+        </div>
+        <RankMetricToggle />
       </header>
 
       <section className="card-pad">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-sm font-semibold text-ink-100">Median terminal wealth, by strategy</div>
+          <div className="text-sm font-semibold text-ink-100">
+            {rankBy === "mean" ? "Mean" : rankBy === "p10" ? "10th-percentile" : "Median"} terminal wealth, by strategy
+          </div>
           <div className="text-xs text-ink-400">Higher is better</div>
         </div>
-        <StrategyWealthBars outcomes={sorted} recommendedId={evaluation.recommendedId} />
+        <StrategyWealthBars outcomes={sorted} recommendedId={evaluation.recommendedId} metric={rankBy} />
       </section>
 
       <section className="card overflow-hidden">
@@ -35,8 +51,9 @@ export function Scenarios({ evaluation }: Props) {
             <thead className="bg-ink-900/60 border-b border-ink-800/70">
               <tr className="text-left">
                 <Th>Strategy</Th>
-                <Th align="right">Median wealth</Th>
-                <Th align="right">10th–90th</Th>
+                <Th align="right" active={rankBy === "mean"}>Mean wealth</Th>
+                <Th align="right" active={rankBy === "median"}>Median wealth</Th>
+                <Th align="right" active={rankBy === "p10"}>10th–90th</Th>
                 <Th align="right">Total tax</Th>
                 <Th align="right">Peak AMT</Th>
                 <Th align="right">Peak conc.</Th>
@@ -62,9 +79,14 @@ export function Scenarios({ evaluation }: Props) {
                         </div>
                       </div>
                     </td>
-                    <Td>{fmt.usd(o.medianTerminalWealth)}</Td>
+                    <Td className={rankBy === "mean" ? "text-emerald2" : ""}>
+                      {fmt.usd(o.meanTerminalWealth)}
+                    </Td>
+                    <Td className={rankBy === "median" ? "text-emerald2" : ""}>
+                      {fmt.usd(o.medianTerminalWealth)}
+                    </Td>
                     <Td>
-                      <span className="text-ink-400">
+                      <span className={rankBy === "p10" ? "text-emerald2" : "text-ink-400"}>
                         {fmt.compactUsd(o.p10TerminalWealth)} – {fmt.compactUsd(o.p90TerminalWealth)}
                       </span>
                     </Td>
@@ -100,10 +122,11 @@ export function Scenarios({ evaluation }: Props) {
               </div>
               <p className="text-sm text-ink-300 mt-3 leading-relaxed">{meta.description}</p>
               <div className="grid grid-cols-3 gap-3 mt-4">
+                <Mini label="Mean wealth" value={fmt.compactUsd(o.meanTerminalWealth)} />
                 <Mini label="Median wealth" value={fmt.compactUsd(o.medianTerminalWealth)} />
                 <Mini label="Tax (horizon)" value={fmt.compactUsd(o.totalTaxes)} />
-                <Mini label="Best for" value={meta.bestFor} mono={false} small />
               </div>
+              <div className="text-[11px] text-ink-500 mt-3 italic">Best for: {meta.bestFor}</div>
             </div>
           );
         })}
@@ -112,9 +135,9 @@ export function Scenarios({ evaluation }: Props) {
   );
 }
 
-function Th({ children, align }: { children: React.ReactNode; align?: "right" }) {
+function Th({ children, align, active }: { children: React.ReactNode; align?: "right"; active?: boolean }) {
   return (
-    <th className={`px-4 py-2.5 text-[11px] uppercase tracking-wider text-ink-400 font-medium ${align === "right" ? "text-right" : ""}`}>
+    <th className={`px-4 py-2.5 text-[11px] uppercase tracking-wider font-medium ${align === "right" ? "text-right" : ""} ${active ? "text-emerald2" : "text-ink-400"}`}>
       {children}
     </th>
   );

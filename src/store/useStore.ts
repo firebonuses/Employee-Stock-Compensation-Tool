@@ -82,7 +82,17 @@ export const useStore = create<Store>()(
     {
       name: "equity-compass:v1",
       storage: createJSONStorage(() => localStorage),
-      version: 1,
+      version: 2,
+      // v1 -> v2: added profile.rankBy. Default existing users to "median".
+      migrate: (persisted, fromVersion) => {
+        const p = persisted as Partial<Store> | undefined;
+        if (!p || !p.profile) return p as Store;
+        const profile = p.profile as Partial<Store["profile"]>;
+        if (fromVersion < 2 && !("rankBy" in profile)) {
+          return { ...p, profile: { ...profile, rankBy: "median" } } as Store;
+        }
+        return p as Store;
+      },
     },
   ),
 );

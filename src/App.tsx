@@ -40,7 +40,8 @@ export default function App() {
     // Re-run when any input changes (use updatedAt as a coalesced key).
     [state.updatedAt, state.grants.length, state.horizonYears, state.company.currentPrice,
      state.company.expectedAnnualReturn, state.company.annualVolatility,
-     state.profile.wages, state.profile.state, state.profile.filingStatus],
+     state.profile.wages, state.profile.state, state.profile.filingStatus,
+     state.profile.rankBy, state.profile.maxConcentrationPct],
   );
 
   return (

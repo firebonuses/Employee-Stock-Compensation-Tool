@@ -399,10 +399,12 @@ export function evaluateAll(
     const tP10 = fan.p10[fan.p10.length - 1];
     const tP50 = fan.p50[fan.p50.length - 1];
     const tP90 = fan.p90[fan.p90.length - 1];
+    const tMean = fan.meanTerminal;
     const heldShares = heldFraction * totalShares;
 
     const p10 = soldProceeds + heldShares * tP10 - totalTaxes;
     const median = soldProceeds + heldShares * tP50 - totalTaxes;
+    const mean = soldProceeds + heldShares * tMean - totalTaxes;
     const p90 = soldProceeds + heldShares * tP90 - totalTaxes;
 
     const horizonPrice = ctx.pricePath[ctx.pricePath.length - 1];
@@ -413,6 +415,7 @@ export function evaluateAll(
     return {
       strategyId: s.id,
       medianTerminalWealth: median,
+      meanTerminalWealth: mean,
       p10TerminalWealth: p10,
       p90TerminalWealth: p90,
       totalTaxes,
@@ -424,12 +427,21 @@ export function evaluateAll(
     } satisfies StrategyOutcome;
   });
 
-  // Recommendation = highest median wealth subject to concentration <= max.
+  // Recommendation = highest wealth on user's chosen metric, subject to
+  // peak concentration <= user's ceiling. If nothing meets the ceiling,
+  // rank all outcomes (the concentration flag still shows in the UI).
+  const rankBy = state.profile.rankBy ?? "median";
+  const metricOf = (o: StrategyOutcome) =>
+    rankBy === "mean"
+      ? o.meanTerminalWealth
+      : rankBy === "p10"
+        ? o.p10TerminalWealth
+        : o.medianTerminalWealth;
   const maxConc = state.profile.maxConcentrationPct / 100;
   const eligible = outcomes.filter((o) => o.peakConcentrationPct <= maxConc * 1.01);
   const ranked = (eligible.length ? eligible : outcomes)
     .slice()
-    .sort((a, b) => b.medianTerminalWealth - a.medianTerminalWealth);
+    .sort((a, b) => metricOf(b) - metricOf(a));
   return { outcomes, priceFan: fan, recommendedId: ranked[0].strategyId };
 }
 

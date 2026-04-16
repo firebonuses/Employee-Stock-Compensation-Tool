@@ -60,6 +60,8 @@ export interface ProfileInputs {
   riskTolerance: number;
   /** Maximum % of net worth user is willing to hold in employer stock. */
   maxConcentrationPct: number;
+  /** Which terminal-wealth metric the recommendation ranks on. */
+  rankBy: RankMetric;
 }
 
 export interface CompanyContext {
@@ -120,10 +122,14 @@ export interface YearlyTaxBreakdown {
   effectiveRate: number;
 }
 
+export type RankMetric = "median" | "mean" | "p10";
+
 export interface StrategyOutcome {
   strategyId: StrategyId;
   /** Median terminal after-tax wealth from employer equity. */
   medianTerminalWealth: number;
+  /** Mean terminal after-tax wealth (higher than median under GBM with σ>0). */
+  meanTerminalWealth: number;
   /** 10th and 90th percentile wealth (Monte Carlo). */
   p10TerminalWealth: number;
   p90TerminalWealth: number;

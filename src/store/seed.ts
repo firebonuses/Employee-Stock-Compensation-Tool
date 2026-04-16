@@ -66,6 +66,7 @@ export const SEED_STATE: AppState = {
     monthsOfReserves: 6,
     riskTolerance: 6,
     maxConcentrationPct: 25,
+    rankBy: "median",
   },
   company: {
     ticker: "ACME",
