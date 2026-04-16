@@ -58,7 +58,7 @@ export function Scenarios({ evaluation }: Props) {
                 <Th align="right" active={rankBy === "mean"}>Mean wealth</Th>
                 <Th align="right" active={rankBy === "median"}>Median wealth</Th>
                 <Th align="right" active={rankBy === "p10"}>10th–90th</Th>
-                <Th align="right">Total tax</Th>
+                <Th align="right">Equity tax</Th>
                 <Th align="right">Peak AMT</Th>
                 <Th align="right">Peak conc.</Th>
                 <Th align="right">Goal Pr.</Th>
@@ -111,7 +111,7 @@ export function Scenarios({ evaluation }: Props) {
                         {fmt.compactUsd(o.p10TerminalWealth)} – {fmt.compactUsd(o.p90TerminalWealth)}
                       </span>
                     </Td>
-                    <Td>{fmt.usd(o.totalTaxes)}</Td>
+                    <Td>{fmt.usd(o.equityAttributableTaxes)}</Td>
                     <Td className={o.peakAmt > 0 ? "text-amber2" : "text-ink-400"}>
                       {o.peakAmt > 0 ? fmt.usd(o.peakAmt) : "—"}
                     </Td>

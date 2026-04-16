@@ -376,10 +376,20 @@ export function evaluateAll(
     seed: 1337,
   });
 
+  // Counterfactual: what would the user's tax bill look like each year if
+  // *no* equity events happened? This is the baseline we net out of each
+  // strategy's total tax so the displayed "equity tax" number (and the
+  // wealth formula below) only attributes the tax caused by equity.
+  const baselineYearTax = computeBaselineWageTax(state);
+
   const outcomes: StrategyOutcome[] = STRATEGY_LIBRARY.map((s) => {
     const yearly = runStrategy(s.id, ctx);
     const breakdown = yearly.map((y) => yearTaxBreakdown(state, y));
     const totalTaxes = breakdown.reduce((sum, b) => sum + b.totalTax, 0);
+    const equityAttributableTaxes = Math.max(
+      0,
+      totalTaxes - baselineYearTax * breakdown.length,
+    );
     const peakAmt = breakdown.reduce((m, b) => Math.max(m, b.federalAmt), 0);
 
     // Wealth accounting, done consistently:
@@ -395,9 +405,11 @@ export function evaluateAll(
     //   This is where volatility drag (median < mean for lognormal paths)
     //   shows up honestly.
     //
-    // - Total taxes over the horizon are subtracted. Taxes are not
-    //   time-discounted (v1 simplification): the tax bill is treated as
-    //   a flat cost against horizon wealth.
+    // - Only *equity-attributable* taxes are subtracted. The user's
+    //   wage-tax baseline (what they'd pay on W-2 income alone with no
+    //   equity) is the same for every strategy and does not belong in
+    //   a comparison of equity wealth outcomes. Taxes are not
+    //   time-discounted (v1 simplification).
     const currentPrice = state.company.currentPrice;
     const mu = state.company.expectedAnnualReturn;
     const r = state.profile.reinvestmentRate ?? 0.04;
@@ -417,10 +429,10 @@ export function evaluateAll(
     const tMean = fan.meanTerminal;
     const heldShares = heldFraction * totalShares;
 
-    const p10 = soldProceeds + heldShares * tP10 - totalTaxes;
-    const median = soldProceeds + heldShares * tP50 - totalTaxes;
-    const mean = soldProceeds + heldShares * tMean - totalTaxes;
-    const p90 = soldProceeds + heldShares * tP90 - totalTaxes;
+    const p10 = soldProceeds + heldShares * tP10 - equityAttributableTaxes;
+    const median = soldProceeds + heldShares * tP50 - equityAttributableTaxes;
+    const mean = soldProceeds + heldShares * tMean - equityAttributableTaxes;
+    const p90 = soldProceeds + heldShares * tP90 - equityAttributableTaxes;
 
     const horizonPrice = ctx.pricePath[ctx.pricePath.length - 1];
     const peakConcentrationPct = peakConcentration(state, heldFraction, horizonPrice);
@@ -434,6 +446,7 @@ export function evaluateAll(
       p10TerminalWealth: p10,
       p90TerminalWealth: p90,
       totalTaxes,
+      equityAttributableTaxes,
       peakAmt,
       peakConcentrationPct,
       yearly: breakdown,
@@ -488,6 +501,21 @@ export function evaluateAll(
     ceilingFriendlyId,
     ceilingFriendlyCost,
   };
+}
+
+/** Annual tax the user would owe on wages / other ordinary income /
+ *  qualified investment income *without* any equity events. Same every
+ *  year (deterministic), so we compute it once. */
+function computeBaselineWageTax(state: AppState): number {
+  const p = state.profile;
+  const slice: TaxableSlice = {
+    ordinaryIncome: p.wages + p.otherOrdinaryIncome,
+    longTermGains: p.qualifiedInvestmentIncome,
+    amtPreferenceItems: 0,
+    niitInvestmentIncome: p.qualifiedInvestmentIncome,
+    itemizedDeductions: p.itemizedDeductions,
+  };
+  return computeYearTax(slice, p.filingStatus, p.state).totalTax;
 }
 
 function yearTaxBreakdown(state: AppState, y: YearAccumulator): YearlyTaxBreakdown {

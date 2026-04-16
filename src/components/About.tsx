@@ -77,6 +77,13 @@ export function About() {
           Terminal wealth combines deterministic post-tax sale proceeds with the held portion
           valued at Monte Carlo terminal-price percentiles.
         </p>
+        <p>
+          The "Equity tax" figure in the comparison table is{" "}
+          <strong>equity-attributable only</strong>: we compute your counterfactual tax bill on
+          wages and non-equity income alone, and subtract it from each strategy's total. This
+          keeps the comparison focused on the tax consequences of your equity choices rather
+          than being dominated by a fixed wage-tax baseline that's the same under every strategy.
+        </p>
       </Section>
 
       <Section title="Post-sale reinvestment">

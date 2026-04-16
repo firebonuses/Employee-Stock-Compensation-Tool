@@ -44,7 +44,7 @@ export function Dashboard({ evaluation }: Props) {
   const baseline = evaluation.outcomes.find((o) => o.strategyId === "hold")!;
   const rankBy = state.profile.rankBy;
   const wealthDelta = metricValue(recommended, rankBy) - metricValue(baseline, rankBy);
-  const taxDelta = baseline.totalTaxes - recommended.totalTaxes;
+  const taxDelta = baseline.equityAttributableTaxes - recommended.equityAttributableTaxes;
 
   return (
     <div className="space-y-8">

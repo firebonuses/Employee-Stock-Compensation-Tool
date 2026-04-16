@@ -137,8 +137,12 @@ export interface StrategyOutcome {
   /** 10th and 90th percentile wealth (Monte Carlo). */
   p10TerminalWealth: number;
   p90TerminalWealth: number;
-  /** Total taxes paid across the horizon (deterministic). */
+  /** Total taxes paid across the horizon, including the wage-tax baseline (deterministic). */
   totalTaxes: number;
+  /** Taxes attributable to equity events only — i.e. totalTaxes minus the
+   *  counterfactual tax bill the user would pay on wages alone. This is
+   *  the number that should be subtracted from equity wealth. */
+  equityAttributableTaxes: number;
   /** Peak AMT exposure in any single year. */
   peakAmt: number;
   /** Peak concentration (as % of total net worth). */
