@@ -79,6 +79,27 @@ export function About() {
         </p>
       </Section>
 
+      <Section title="Post-sale reinvestment">
+        <p>
+          Strategies that sell shares produce cash <em>earlier</em> than the planning horizon.
+          That cash doesn't sit under a mattress — you'd normally put it in T-bills, a HYSA, or a
+          diversified portfolio. We model this with a single user-controllable{" "}
+          <strong>reinvestment rate</strong> applied from each strategy's approximate sale time
+          forward to the horizon.
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li><strong>0%</strong> — penalizes early-sale strategies; useful to stress-test Hold against Same-Day.</li>
+          <li><strong>4%</strong> — approximates T-bills / a high-yield savings account (the default).</li>
+          <li><strong>7%</strong> — a long-run diversified-equities assumption.</li>
+        </ul>
+        <p>
+          This matters because the gap between Same-Day Sale and strategies that hold employer
+          stock is partly real (you forfeit employer-stock upside, and taxes bunch into one year)
+          and partly an artifact of comparing cash-earning-nothing to shares-compounding-at-μ.
+          Turning the dial lets you see how much of the gap is each.
+        </p>
+      </Section>
+
       <Section title="What this is not">
         <p>
           This is an <strong>educational planning tool</strong>, not tax, legal, or investment

@@ -146,6 +146,15 @@ export function Profile() {
           <Field label="Annual volatility (σ)" hint="Single names: 35–70% typical">
             <PctInput value={company.annualVolatility} onChange={(v) => setCompany({ annualVolatility: v })} />
           </Field>
+          <Field
+            label="Post-sale reinvestment rate"
+            hint="What your after-tax cash earns from sale date to horizon (0% = mattress, 4% ≈ T-bills/HYSA, 7% ≈ diversified equities)"
+          >
+            <PctInput
+              value={profile.reinvestmentRate}
+              onChange={(v) => setProfile({ reinvestmentRate: v })}
+            />
+          </Field>
           <Field label={`Planning horizon (${horizon} years)`}>
             <input
               type="range"

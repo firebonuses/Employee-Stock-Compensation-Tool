@@ -384,25 +384,32 @@ export function evaluateAll(
 
     // Wealth accounting, done consistently:
     //
-    // - SOLD shares: valued at approximately the price at time-of-sale.
-    //   For v1 we use today's price (a conservative proxy; sales happen
-    //   across year 1 for most strategies and across the horizon for
-    //   AMT-Optimized / Exercise-and-Hold — see strategySellPriceFactor).
+    // - SOLD shares: valued at the price at time-of-sale (today's price
+    //   grown at μ to the strategy's approximate sale time). The resulting
+    //   cash is then compounded at the user's reinvestmentRate from sale
+    //   time to the planning horizon, reflecting that post-sale cash
+    //   typically earns *something* (T-bills, HYSA, diversified portfolio)
+    //   rather than sitting idle.
     //
     // - HELD shares: valued at the Monte Carlo terminal-price percentile.
     //   This is where volatility drag (median < mean for lognormal paths)
     //   shows up honestly.
     //
-    // - Total taxes over the horizon are subtracted.
+    // - Total taxes over the horizon are subtracted. Taxes are not
+    //   time-discounted (v1 simplification): the tax bill is treated as
+    //   a flat cost against horizon wealth.
     const currentPrice = state.company.currentPrice;
+    const mu = state.company.expectedAnnualReturn;
+    const r = state.profile.reinvestmentRate ?? 0.04;
+    const H = state.horizonYears;
     const totalShares = sharesEquivalent(state.grants);
     const heldFraction = strategyHeldFraction(s.id);
-    const sellPriceFactor = strategySellPriceFactor(
-      s.id,
-      state.company.expectedAnnualReturn,
-      state.horizonYears,
-    );
-    const soldProceeds = (1 - heldFraction) * totalShares * currentPrice * sellPriceFactor;
+    const saleTime = strategySellTime(s.id, H);
+    const sellPrice = currentPrice * Math.pow(1 + mu, saleTime);
+    const reinvestYears = Math.max(0, H - saleTime);
+    const reinvestGrowth = Math.pow(1 + r, reinvestYears);
+    const soldProceeds =
+      (1 - heldFraction) * totalShares * sellPrice * reinvestGrowth;
 
     const tP10 = fan.p10[fan.p10.length - 1];
     const tP50 = fan.p50[fan.p50.length - 1];
@@ -529,29 +536,26 @@ function strategyHeldFraction(id: StrategyId): number {
 }
 
 /**
- * Approximate growth factor applied to "today's price" to value sold
- * shares under each strategy, reflecting when those sales typically
- * happen across the horizon. `1.0` ≈ sold at today's price.
+ * Approximate average year (0 = today, H = horizon) at which a strategy's
+ * sold shares are converted to cash. Drives two things:
+ *   1. Sell price = currentPrice × (1+μ)^saleTime (deterministic proxy).
+ *   2. Reinvestment window = horizonYears − saleTime, during which the
+ *      post-sale cash compounds at the user's reinvestment rate.
  */
-function strategySellPriceFactor(
-  id: StrategyId,
-  mu: number,
-  horizonYears: number,
-): number {
-  const pow = (t: number) => Math.pow(1 + mu, t);
+function strategySellTime(id: StrategyId, horizonYears: number): number {
   switch (id) {
     case "hold":
-      return 1.0; // no sales; factor doesn't matter (heldFraction=1)
+      return 0; // no sales (heldFraction=1); saleTime is irrelevant
     case "sameDaySale":
-      return 1.0; // today
+      return 0; // sells everything up front
     case "sellToCover":
-      return pow(horizonYears * 0.5); // covers spread across horizon
+      return horizonYears * 0.5; // sells at each vest, spread across horizon
     case "systematic":
-      return pow(0.375); // avg of 4 quarterly sales in year 1
+      return 0.375; // avg of 4 quarterly sales in year 1
     case "amtOptimized":
-      return pow(horizonYears * 0.75); // ISOs sold after 1yr LTCG hold, late
+      return horizonYears * 0.75; // ISOs held >=1yr for LTCG, sold late
     case "exerciseAndHold":
-      return pow(horizonYears * 0.6); // exercised early, sold later for LTCG
+      return horizonYears * 0.6; // exercised early, sold later for LTCG
   }
 }
 

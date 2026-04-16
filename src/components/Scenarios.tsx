@@ -5,6 +5,7 @@ import { useStore } from "../store/useStore";
 import { StrategyWealthBars } from "./charts/StrategyBars";
 import { Check, Sparkle } from "./icons";
 import { RankMetricToggle } from "./RankMetricToggle";
+import { ReinvestmentRateToggle } from "./ReinvestmentRateToggle";
 
 interface Props {
   evaluation: EvaluationResult;
@@ -32,7 +33,10 @@ export function Scenarios({ evaluation }: Props) {
             how the recommendation is chosen.
           </p>
         </div>
-        <RankMetricToggle />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <RankMetricToggle />
+          <ReinvestmentRateToggle />
+        </div>
       </header>
 
       <section className="card-pad">

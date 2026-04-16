@@ -9,6 +9,7 @@ import { PriceFanChart } from "./charts/PriceFanChart";
 import { TaxBreakdownChart } from "./charts/TaxBreakdownChart";
 import { ArrowDown, ArrowUp, Calendar, Sparkle, TriangleAlert } from "./icons";
 import { RankMetricToggle } from "./RankMetricToggle";
+import { ReinvestmentRateToggle } from "./ReinvestmentRateToggle";
 
 function metricValue(o: StrategyOutcome, m: RankMetric): number {
   return m === "mean" ? o.meanTerminalWealth : m === "p10" ? o.p10TerminalWealth : o.medianTerminalWealth;
@@ -128,8 +129,9 @@ export function Dashboard({ evaluation }: Props) {
               </div>
             </div>
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex flex-col sm:flex-row gap-4">
             <RankMetricToggle />
+            <ReinvestmentRateToggle />
           </div>
         </div>
       </section>

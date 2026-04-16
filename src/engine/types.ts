@@ -62,6 +62,10 @@ export interface ProfileInputs {
   maxConcentrationPct: number;
   /** Which terminal-wealth metric the recommendation ranks on. */
   rankBy: RankMetric;
+  /** Annual rate at which post-sale cash proceeds are assumed to grow
+   *  from time-of-sale to the planning horizon. Typical values:
+   *  0.00 (mattress), 0.04 (T-bills / HYSA), 0.07 (diversified equities). */
+  reinvestmentRate: number;
 }
 
 export interface CompanyContext {
